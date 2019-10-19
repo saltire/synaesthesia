@@ -7,9 +7,11 @@ check my githib for a more complete version:
 
 # originally from https://github.com/swharden/Python-GUI-examples
 
+import colorsys
 import pyaudio
 import time
 import numpy as np
+import subprocess
 import threading
 # import matplotlib.pyplot as plt
 import sys
@@ -160,23 +162,40 @@ if __name__=="__main__":
     ear = SWHear(updatesPerSecond=10) # optionally set sample rate here
     ear.stream_start() # goes forever
     lastRead = ear.chunksRead
-    while True:
-        # wait for new data
-        while lastRead == ear.chunksRead:
-            # time.sleep(.01)
-            continue
 
-        if ear.data is not None and ear.fft is not None:
-            pcmMax = np.max(np.abs(ear.data))
+    with subprocess.Popen(['glslViewer', 'flat.frag'], stdin=subprocess.PIPE, encoding='utf8') as glsl:
+        while True:
+            # wait for new data
+            while lastRead == ear.chunksRead:
+                # time.sleep(.01)
+                continue
 
-            freq = ear.fftx
-            fft = np.abs(ear.fft)
-            print('Volume: {}, Frequency: {} Hz'.format(pcmMax, freq[np.argmax(fft)]))
+            if ear.data is not None and ear.fft is not None:
+                volume = np.max(np.abs(ear.data))
 
-            # plt.plot(freq, fft)
-            # plt.xlim(1, 800)
+                freq = ear.fftx
+                fft = np.abs(ear.fft)
+                frequency = freq[np.argmax(fft)]
+                print('Volume: {}, Frequency: {} Hz'.format(volume, frequency))
 
-        lastRead = ear.chunksRead
+                # plt.plot(freq, fft)
+                # plt.xlim(1, 800)
+
+                hue = frequency / 2000.0
+                value = min(1.0, volume / 12000.0)
+
+                r, g, b = colorsys.hsv_to_rgb(hue, 1.0, value)
+                lines = ['u_flatcolor,{},{},{}\n'.format(r, g, b)]
+
+                print(lines)
+
+                try:
+                    glsl.stdin.writelines(lines)
+                    glsl.stdin.flush()
+                except Exception as ex:
+                    print('Exception:', ex)
+
+            lastRead = ear.chunksRead
 
     # plt.show()
     print("DONE")
