@@ -2,7 +2,7 @@ import alsaseq
 import subprocess
 
 
-CLIENT = 24
+CLIENT = 20
 
 events = {
     5: 'note',

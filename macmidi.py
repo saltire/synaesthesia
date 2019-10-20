@@ -6,10 +6,10 @@ import subprocess
 DEVICE_ID = 0
 
 events = {
-    128: 'noteoff',
-    144: 'noteon',
-    176: 'control', # launchkey control
-    192: 'button', # tripleplay button
+    8: 'noteoff',
+    9: 'noteon',
+    11: 'controller',
+    12: 'pgmchange',
 }
 
 midi.init()
@@ -22,49 +22,34 @@ midi.init()
 
 midi_input = midi.Input(DEVICE_ID)
 
-hue = 0
-value = 0
-
 with subprocess.Popen(['glslViewer', 'flat.frag'], stdin=subprocess.PIPE, encoding='utf8') as glsl:
+    def set_color(hue, value):
+        r, g, b = colorsys.hsv_to_rgb(hue, 1.0, value)
+        lines = ['u_flatcolor,{},{},{}\n'.format(r, g, b)]
+        print(lines)
+
+        try:
+            glsl.stdin.writelines(lines)
+            glsl.stdin.flush()
+        except Exception as ex:
+            print('Exception:', ex)
+
     while True:
         if midi_input.poll():
-            [[[etype, note, velocity, off_velocity], timestamp]] = midi_input.read(1)
-            print('event {}, note {}, velocity {}, off_velocity {}, timestamp {}'
-                .format(events[etype] if etype in events else etype,
-                        note, velocity, off_velocity, timestamp))
+            [[[status, *params], timestamp]] = midi_input.read(1)
+            etype = status >> 4
+            channel = status & 0xf
+            event = events[etype] if etype in events else etype
+            print('{} event, params {}, timestamp {}'.format(event, params, timestamp))
 
-            if etype in [128, 144, 176]:
-                if etype == 144:
-                    hue = (note - 40) / 50.0
-                    value = velocity / 127.0 if etype == 144 else 0
-                elif etype == 128:
-                    value = 0
-                elif etype == 176:
-                    hue = (note - 21) / 8.0 # launchkey dial
-                    value = velocity / 127.0
+            if event == 'noteon':
+                note, velocity, _ = params
+                set_color((note - 40) / 50.0, velocity / 127.0)
 
-                r, g, b = colorsys.hsv_to_rgb(hue, 1.0, value)
-                lines = ['u_flatcolor,{},{},{}\n'.format(r, g, b)]
+            elif event == 'noteoff':
+                set_color(0, 0)
 
-                print(lines)
-
-                try:
-                    glsl.stdin.writelines(lines)
-                    glsl.stdin.flush()
-                except Exception as ex:
-                    print('Exception:', ex)
-
-        # elif value > 0:
-        #     print('fade out')
-        #     value = max(0.0, value - 0.01)
-
-        #     r, g, b = colorsys.hsv_to_rgb(hue, 1.0, value)
-        #     lines = ['u_flatcolor,{},{},{}\n'.format(r, g, b)]
-
-        #     print(lines)
-
-        #     try:
-        #         glsl.stdin.writelines(lines)
-        #         glsl.stdin.flush()
-        #     except Exception as ex:
-        #         print('Exception:', ex)
+            elif event == 'controller':
+                control, level, _ = params
+                if control in range(21, 29): # launchkey dials
+                    set_color((control - 21) / 8.0, level / 127.0)
