@@ -4,7 +4,6 @@ import socket
 import sys
 import subprocess
 
-
 if sys.platform.startswith('linux'):
     from midialsa import MidiAlsa as Midi
 else:
@@ -21,21 +20,20 @@ with subprocess.Popen(['processing-java', f'--sketch={dirname}/sketch', '--prese
                         stdin=subprocess.PIPE, encoding='utf8') as proc:
     conn, addr = s.accept()
 
-    def set_color(hue, value):
-        r, g, b = colorsys.hsv_to_rgb(hue, 1.0, value)
-        line = f'u_flatcolor,{r},{g},{b}\nabcd\n'
-        # print(line)
-        conn.send(line.encode())
+    def send(string):
+        conn.send(f'{string}\n'.encode('utf8'))
 
     def noteon(note, velocity):
-        set_color((note - 40) / 50.0, velocity / 127.0)
+        if note in range(40, 90):
+            send(f'note,{note - 40},{velocity / 127.0}')
 
     def noteoff(note, velocity):
-        set_color(0, 0)
+        if note in range(40, 90):
+            send(f'note,{note - 40},0')
 
     def controller(control, level):
         if control in range(21, 29): # launchkey dials
-            set_color((control - 21) / 8.0, level / 127.0)
+            send(f'control,{control - 21},{level / 127.0}')
 
     midi = Midi()
 
