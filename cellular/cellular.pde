@@ -4,27 +4,19 @@ float cellSize = 10;
 int w;
 int h;
 
-float ease = 0.67;
-float velMax = 255;
+float ease = 0.5;
 float minDist = 8;
 float minDistSquare = minDist * minDist;
 float sepNormMag = 4;
+float clickMag = 100;
 
 class Cell {
   int x;
   int y;
-  float r;
-  float g;
-  float b;
-  float rNext;
-  float gNext;
-  float bNext;
-  float rVel;
-  float gVel;
-  float bVel;
-  float rVelNext;
-  float gVelNext;
-  float bVelNext;
+  PVector col;
+  PVector colNext;
+  PVector vel;
+  PVector velNext;
   Cell[] neighbors;
   int neighborCount;
 }
@@ -33,8 +25,6 @@ Cell[][] cells;
 
 void setup() {
   size(800, 480);
-
-  background(0);
   noStroke();
 
   w = ceil(width / cellSize);
@@ -48,18 +38,13 @@ void setup() {
 
       cell.x = x;
       cell.y = y;
-      cell.r = noise(x * .1, y * .1, 0) * 255;
-      cell.g = noise(x * .1, y * .1, 1) * 255;
-      cell.b = noise(x * .1, y * .1, 2) * 255;
-      cell.rNext = cell.r;
-      cell.gNext = cell.g;
-      cell.bNext = cell.b;
-      cell.rVel = 0;
-      cell.gVel = 0;
-      cell.bVel = 0;
-      cell.rVelNext = cell.rVel;
-      cell.gVelNext = cell.gVel;
-      cell.bVelNext = cell.bVel;
+      cell.col = new PVector(
+        noise(x * .1, y * .1, 0) * 255,
+        noise(x * .1, y * .1, 1) * 255,
+        noise(x * .1, y * .1, 2) * 255);
+      cell.colNext = cell.col.copy();
+      cell.vel = new PVector(0, 0, 0);
+      cell.velNext = cell.vel.copy();
       cell.neighbors = new Cell[4];
       cell.neighborCount = 0;
 
@@ -86,121 +71,75 @@ void setup() {
 }
 
 void draw() {
+  background(0);
+  scale(cellSize);
+
+  int mx = floor(mouseX / cellSize);
+  int my = floor(mouseY / cellSize);
+
   for (int x = 0; x < w; x++) {
     for (int y = 0; y < h; y++) {
       Cell cell = cells[x][y];
 
-      float rAvg = 0;
-      float gAvg = 0;
-      float bAvg = 0;
-      float rVelAvg = 0;
-      float gVelAvg = 0;
-      float bVelAvg = 0;
-      float rSep = 0;
-      float gSep = 0;
-      float bSep = 0;
+      PVector colAvg = new PVector(0, 0, 0);
+      PVector velAvg = new PVector(0, 0, 0);
+      PVector sep = new PVector(0, 0, 0);
 
       for (int n = 0; n < 4; n++) {
         if (cell.neighbors[n] != null) {
           Cell neighbor = cell.neighbors[n];
 
-          rAvg += neighbor.r;
-          gAvg += neighbor.g;
-          bAvg += neighbor.b;
-          rVelAvg += neighbor.rVel;
-          gVelAvg += neighbor.gVel;
-          bVelAvg += neighbor.bVel;
-
-          float dr = cell.r - neighbor.r;
-          float dg = cell.g - neighbor.g;
-          float db = cell.b - neighbor.b;
+          colAvg.add(neighbor.col);
+          velAvg.add(neighbor.vel);
+          PVector dist = PVector.sub(cell.col, neighbor.col);
 
           // If the color is too close to the neighbor's color, try to steer away from it.
-          if (dr * dr  + dg * dg + db * db < minDistSquare) {
-            rSep += dr;
-            gSep += dg;
-            bSep += db;
+          if (dist.magSq() < minDistSquare) {
+            sep.add(dist);
           }
         }
       }
 
-      rAvg /= cell.neighborCount;
-      gAvg /= cell.neighborCount;
-      bAvg /= cell.neighborCount;
-      rVelAvg /= cell.neighborCount;
-      gVelAvg /= cell.neighborCount;
-      bVelAvg /= cell.neighborCount;
+      colAvg.div(cell.neighborCount);
+      velAvg.div(cell.neighborCount);
 
       // Normalize separation vector to a constant magnitude.
-      if (rSep != 0 || gSep != 0 || bSep != 0) {
-        float sepNormRecip = sepNormMag / sqrt(rSep * rSep + gSep * gSep + bSep * bSep);
-        rSep *= sepNormRecip;
-        gSep *= sepNormRecip;
-        bSep *= sepNormRecip;
+      if (sep.magSq() > 0) {
+        sep.setMag(sepNormMag);
       }
 
-      cell.rVelNext += (rAvg - cell.r + rVelAvg - cell.rVel + rSep) * ease;
-      cell.gVelNext += (gAvg - cell.g + gVelAvg - cell.gVel + gSep) * ease;
-      cell.bVelNext += (bAvg - cell.b + bVelAvg - cell.bVel + bSep) * ease;
+      cell.velNext.lerp(velAvg.add(colAvg).sub(cell.col).add(sep), ease);
+      // cell.velNext.add(PVector.add(colAvg, velAvg).sub(cell.col).sub(cell.vel).add(sep).mult(ease));
+      cell.colNext.add(cell.velNext);
 
-      cell.rNext += cell.rVelNext;
-      cell.gNext += cell.gVelNext;
-      cell.bNext += cell.bVelNext;
+      // Bounce velocity if color values go out of bounds.
+      cell.velNext.set(
+        (cell.colNext.x < 0 || cell.colNext.x > 255) ? -cell.velNext.x : cell.velNext.x,
+        (cell.colNext.y < 0 || cell.colNext.y > 255) ? -cell.velNext.y : cell.velNext.y,
+        (cell.colNext.z < 0 || cell.colNext.z > 255) ? -cell.velNext.z : cell.velNext.z);
+      // Constrain the color values.
+      cell.colNext.set(
+        constrain(cell.colNext.x, 0, 255),
+        constrain(cell.colNext.y, 0, 255),
+        constrain(cell.colNext.z, 0, 255));
 
-      if (cell.rNext < 0) {
-        cell.rNext = 0;
-        cell.rVelNext *= -1;
-      }
-      if (cell.rNext > 255) {
-        cell.rNext = 255;
-        cell.rVelNext *= -1;
-      }
-      if (cell.gNext < 0) {
-        cell.gNext = 0;
-        cell.gVelNext *= -1;
-      }
-      if (cell.gNext > 255) {
-        cell.gNext = 255;
-        cell.gVelNext *= -1;
-      }
-      if (cell.bNext < 0) {
-        cell.bNext = 0;
-        cell.bVelNext *= -1;
-      }
-      if (cell.bNext > 255) {
-        cell.bNext = 255;
-        cell.bVelNext *= -1;
+      // Use mouse input to mess with the colors.
+      if (mousePressed && x == mx && y == my) {
+        // cell.colNext.set(255 - cell.colNext.x, 255 - cell.colNext.y, 255 - cell.colNext.z);
+        cell.velNext.setMag(clickMag);
       }
     }
   }
-
-  scale(cellSize);
 
   for (int x = 0; x < w; x++) {
     for (int y = 0; y < h; y++) {
       Cell cell = cells[x][y];
 
-      cell.r = cell.rNext;
-      cell.g = cell.gNext;
-      cell.b = cell.bNext;
-      cell.rVel = cell.rVelNext;
-      cell.gVel = cell.gVelNext;
-      cell.bVel = cell.bVelNext;
+      cell.col.set(cell.colNext);
+      cell.vel.set(cell.velNext);
 
-      fill(color(cell.r, cell.g, cell.b));
+      fill(color(cell.col.x, cell.col.y, cell.col.z));
       rect(x, y, 1, 1);
     }
   }
-}
-
-void mousePressed() {
-  int x = floor(mouseX / cellSize);
-  int y = floor(mouseY / cellSize);
-  Cell cell = cells[x][y];
-  cell.r = 255;
-  cell.g = 0;
-  cell.b = 0;
-  cell.rVel = 0;
-  cell.gVel = 0;
-  cell.bVel = 0;
 }
