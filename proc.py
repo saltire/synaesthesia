@@ -4,7 +4,10 @@ import socket
 import sys
 import subprocess
 
-if sys.platform.startswith('linux'):
+# Check if we're on a linux system (i.e. the Pi).
+rpi = sys.platform.startswith('linux')
+
+if rpi:
     from midialsa import MidiAlsa as Midi
 else:
     from midipygame import MidiPygame as Midi
@@ -16,8 +19,10 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind(('', 8027))
 s.listen(1)
 
-with subprocess.Popen(['processing-java', f'--sketch={dirname}/sketch', '--present'],
-                        stdin=subprocess.PIPE, encoding='utf8') as proc:
+mode = '--present' if rpi else '--run'
+
+with subprocess.Popen(['processing-java', f'--sketch={dirname}/sketch', mode],
+                      stdin=subprocess.PIPE, encoding='utf8') as proc:
     conn, addr = s.accept()
 
     def send(string):
