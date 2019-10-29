@@ -8,7 +8,7 @@ import threading
 # Check if we're on a linux system (i.e. the Pi). TODO: find a more specific way to identify it.
 rpi = sys.platform.startswith('linux')
 
-if rpi:
+if rpi and False:
     from midialsa import MidiAlsa as Midi
 else:
     from midipygame import MidiPygame as Midi

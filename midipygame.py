@@ -1,7 +1,10 @@
 import pygame.midi as midi
 
 
-DEVICE_ID = 0
+default_device_id = 0
+known_devices = [
+    'Launchkey Mini MIDI 1'
+]
 
 class MidiPygame:
     events = {
@@ -16,13 +19,21 @@ class MidiPygame:
 
         midi.init()
 
-        # for i in range(midi.get_count()):
-        #     interf, name, is_input, is_output, opened = midi.get_device_info(i)
-        #     print('{} {} ({}) {}'.format(interf, name,
-        #             'input' if is_input else 'output' if is_output else 'none',
-        #             '(open)' if opened else ''))
+        device_id = default_device_id
 
-        self.midi_input = midi.Input(DEVICE_ID)
+        for i in range(midi.get_count()):
+            interf, name, is_input, is_output, opened = midi.get_device_info(i)
+            # interf = interf.decode('utf-8')
+            name = name.decode('utf-8')
+            # imode = 'input' if is_input else 'output' if is_output else 'none'
+            # iopen = '(open)' if opened else ''
+            # print(f'{interf} {name} ({imode}) {iopen}')
+            if name in known_devices and is_input:
+                device_id = i
+                print(f'Using known input device {name}')
+                break
+
+        self.midi_input = midi.Input(device_id)
 
         self.binds = {}
 
