@@ -26,18 +26,25 @@ class MidiPygame:
 
         self.binds = {}
 
+        self.running = True
+
     def bind(self, event, func):
         self.binds[event] = func
 
     def start(self):
-        while True:
+        while self.running:
             if self.midi_input.poll():
                 [[[status, *params], timestamp]] = self.midi_input.read(1)
                 etype = status >> 4
                 channel = status & 0xf
                 event = self.events[etype] if etype in self.events else etype
-                print('{} event, channel {}, params {}, timestamp {}'
-                    .format(event, channel, params, timestamp))
+                # print('{} event, channel {}, params {}, timestamp {}'
+                #     .format(event, channel, params, timestamp))
 
                 if event in self.binds:
                     self.binds[event](*params[:2])
+
+        self.midi_input.close()
+
+    def end(self):
+        self.running = False
