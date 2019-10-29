@@ -45,7 +45,6 @@ void setup() {
 
   svg = loadShape("ghostemoji.svg");
   svg.disableStyle();
-  svg.setStroke(false);
 
   controls[STRIPE_SPIN_SPEED] = .5;
   controls[STRIPE_ANIM_SPEED] = .5;
@@ -95,12 +94,7 @@ void draw() {
 
     translate(-stripeLength / 2, -stripeLength / 2);
     for (float x = 0; x <= stripeLength; x += stripeSpacing) {
-      beginShape();
-        vertex(x, 0);
-        vertex(x + stripeWidth, 0);
-        vertex(x + stripeWidth, stripeLength);
-        vertex(x, stripeLength);
-      endShape(CLOSE);
+      rect(x, 0, stripeWidth, stripeLength);
     }
   pop();
 }
