@@ -27,11 +27,14 @@ float maxGhostSpinSpeed = .01 * TAU;
 
 float maxGhostSizeSpeed = 5;
 float minGhostSize = .1;
-float maxGhostSize = 1.1;
+float maxGhostSize = 1.9;
 float currentSizePhase = 0;
 
-// float maxSineWaveHeight = 5; // relative to stripeSpacing
-// float maxSineWaveLength = 5; // relative to stripeSpacing
+// all relative to stripeSpacing
+float maxSineWaveHeight = 1;
+float minSineWaveLength = .5;
+float maxSineWaveLength = 20;
+float sineWaveSegmentLength = .1;
 
 int STRIPE_SPIN_SPEED = 21;
 int STRIPE_ANIM_SPEED = 22;
@@ -41,8 +44,16 @@ int THICK_WAVE_AMOUNT = 25;
 int THICK_WAVE_SPEED = 26;
 int GHOST_SPIN_SPEED = 27;
 int GHOST_SIZE_SPEED = 28;
-// int SINE_WAVE_HEIGHT = 27;
-// int SINE_WAVE_LENGTH = 28;
+// alt mode
+int SINE_WAVE_HEIGHT = 27;
+int SINE_WAVE_LENGTH = 28;
+
+boolean altMode7 = false;
+int ALT_MODE_7_ON = 46;
+int ALT_MODE_7_OFF = 50;
+boolean altMode8 = false;
+int ALT_MODE_8_ON = 47;
+int ALT_MODE_8_OFF = 51;
 
 void setup() {
   size(800, 480);
@@ -54,6 +65,7 @@ void setup() {
   canvasSize = sqrt(width * width + height * height) * 1.9;
 
   shapeMode(CENTER);
+  strokeJoin(ROUND);
   svg = loadShape("ghostemoji.svg");
   svg.disableStyle();
 
@@ -66,10 +78,27 @@ void setup() {
   controls[GHOST_SPIN_SPEED] = .5;
   controls[GHOST_SIZE_SPEED] = 0;
   // controls[SINE_WAVE_HEIGHT] = 0;
-  // controls[SINE_WAVE_LENGTH] = 0;
+  // controls[SINE_WAVE_LENGTH] = .5;
 }
 
 void draw() {
+  if (notes[ALT_MODE_7_ON] > 0) {
+    altMode7 = true;
+    controls[SINE_WAVE_HEIGHT] = 0;
+  }
+  if (notes[ALT_MODE_7_OFF] > 0) {
+    altMode7 = false;
+    controls[GHOST_SPIN_SPEED] = .5;
+  }
+  if (notes[ALT_MODE_8_ON] > 0) {
+    altMode8 = true;
+    controls[SINE_WAVE_LENGTH] = .5;
+  }
+  if (notes[ALT_MODE_8_OFF] > 0) {
+    altMode8 = false;
+    controls[GHOST_SIZE_SPEED] = 0;
+  }
+
   float stripeSpinSpeed = mapPosNeg(STRIPE_SPIN_SPEED, maxStripeSpinSpeed);
   float stripeAnimSpeed = mapPosNeg(STRIPE_ANIM_SPEED, maxStripeAnimSpeed);
   float stripeSpacing = mapControl(STRIPE_SPACING, minStripeSpacing, maxStripeSpacing);
@@ -77,10 +106,11 @@ void draw() {
   float minWidth = mapControl(THICK_WAVE_AMOUNT, stripeThickness, 0);
   float maxWidth = mapControl(THICK_WAVE_AMOUNT, stripeThickness, 1);
   float thickWaveSpeed = controls[THICK_WAVE_SPEED] * maxThickWaveSpeed;
-  float ghostSpinSpeed = mapPosNeg(GHOST_SPIN_SPEED, maxGhostSpinSpeed);
-  float ghostSizeSpeed = controls[GHOST_SIZE_SPEED] * maxGhostSizeSpeed;
-  // float sineWaveHeight = controls[SINE_WAVE_HEIGHT] * maxSineWaveHeight;
-  // float sineWaveLength = controls[SINE_WAVE_LENGTH] * maxSineWaveLength;
+  float ghostSpinSpeed = altMode7 ? 0 : mapPosNeg(GHOST_SPIN_SPEED, maxGhostSpinSpeed);
+  float ghostSizeSpeed = altMode8 ? 0 : controls[GHOST_SIZE_SPEED] * maxGhostSizeSpeed;
+  // alt mode
+  float sineWaveHeight = altMode7 ? controls[SINE_WAVE_HEIGHT] * maxSineWaveHeight * stripeSpacing : 0;
+  float sineWaveLength = altMode8 ? mapControl(SINE_WAVE_LENGTH, minSineWaveLength, maxSineWaveLength) * stripeSpacing : 0;
 
   background(bkgdColor);
   translate(width / 2, height / 2);
@@ -103,7 +133,16 @@ void draw() {
     stroke(stripeColor);
     strokeWeight(stripeWidth);
     for (float x = stripeSpacing / 2; x <= canvasSize; x += stripeSpacing) {
-      line(x, 0, x, canvasSize);
+      if (sineWaveHeight == 0) {
+        line(x, 0, x, canvasSize);
+      }
+      else {
+        beginShape();
+          for (float y = 0; y <= canvasSize; y += sineWaveSegmentLength * stripeSpacing) {
+            vertex(x + sin(y / sineWaveLength * TAU) * sineWaveHeight, y);
+          }
+        endShape();
+      }
     }
   pop();
 
