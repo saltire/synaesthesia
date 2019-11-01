@@ -74,7 +74,8 @@ void draw() {
   float stripeAnimSpeed = mapPosNeg(STRIPE_ANIM_SPEED, maxStripeAnimSpeed);
   float stripeSpacing = mapControl(STRIPE_SPACING, minStripeSpacing, maxStripeSpacing);
   float stripeThickness = controls[STRIPE_THICKNESS];
-  float thickWaveAmount = controls[THICK_WAVE_AMOUNT] * maxThickWaveAmount;
+  float minWidth = mapControl(THICK_WAVE_AMOUNT, stripeThickness, 0);
+  float maxWidth = mapControl(THICK_WAVE_AMOUNT, stripeThickness, 1);
   float thickWaveSpeed = controls[THICK_WAVE_SPEED] * maxThickWaveSpeed;
   float ghostSpinSpeed = mapPosNeg(GHOST_SPIN_SPEED, maxGhostSpinSpeed);
   float ghostSizeSpeed = controls[GHOST_SIZE_SPEED] * maxGhostSizeSpeed;
@@ -93,15 +94,16 @@ void draw() {
 
     currentThickPhase = (currentThickPhase + thickWaveSpeed / rate) % 1;
     float tSin = sin(currentThickPhase * TAU);
-    float thickMod = tSin * thickWaveAmount * (tSin > 0 ? 1 - stripeThickness : stripeThickness);
-    float stripeWidth = (stripeThickness + thickMod) * stripeSpacing;
+    float stripeWidth = map(tSin, -1, 1, minWidth, maxWidth) * stripeSpacing;
 
     float startPos = ceil(canvasSize / stripeSpacing) / 2 * stripeSpacing;
     translate(-startPos, -startPos);
 
-    fill(stripeColor);
-    for (float x = 0; x <= canvasSize; x += stripeSpacing) {
-      rect(x, 0, stripeWidth, canvasSize);
+    noFill();
+    stroke(stripeColor);
+    strokeWeight(stripeWidth);
+    for (float x = stripeSpacing / 2; x <= canvasSize; x += stripeSpacing) {
+      line(x, 0, x, canvasSize);
     }
   pop();
 
