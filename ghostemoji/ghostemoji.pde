@@ -10,7 +10,7 @@ color stripeColor = color(255);
 float stripeLength;
 
 float currentStripeAngle = TAU / 8;
-float maxStripeSpinSpeed = .02 * TAU; // revolutions per frame
+float maxStripeSpinSpeed = .01 * TAU; // revolutions per frame
 
 float currentAnimPhase = 0;
 float maxStripeAnimSpeed = 20; // stripeSpacings per second
@@ -22,6 +22,14 @@ float maxThickWaveSpeed = 5; // undulations per second
 float maxThickWaveAmount = 1;
 float currentThickPhase = 0;
 
+float currentGhostAngle = 0;
+float maxGhostSpinSpeed = .01 * TAU;
+
+float maxGhostSizeSpeed = 5;
+float minGhostSize = .1;
+float maxGhostSize = 1.1;
+float currentSizePhase = 0;
+
 // float maxSineWaveHeight = 5; // relative to stripeSpacing
 // float maxSineWaveLength = 5; // relative to stripeSpacing
 
@@ -31,6 +39,8 @@ int STRIPE_SPACING = 23;
 int STRIPE_THICKNESS = 24;
 int THICK_WAVE_AMOUNT = 25;
 int THICK_WAVE_SPEED = 26;
+int GHOST_SPIN_SPEED = 27;
+int GHOST_SIZE_SPEED = 28;
 // int SINE_WAVE_HEIGHT = 27;
 // int SINE_WAVE_LENGTH = 28;
 
@@ -41,8 +51,9 @@ void setup() {
 
   frameRate(rate);
 
-  stripeLength = sqrt(width * width + height * height) * 1.25;
+  stripeLength = sqrt(width * width + height * height) * 1.9;
 
+  shapeMode(CENTER);
   svg = loadShape("ghostemoji.svg");
   svg.disableStyle();
 
@@ -52,6 +63,8 @@ void setup() {
   controls[STRIPE_THICKNESS] = .5;
   controls[THICK_WAVE_AMOUNT] = 0;
   controls[THICK_WAVE_SPEED] = .5;
+  controls[GHOST_SPIN_SPEED] = .5;
+  controls[GHOST_SIZE_SPEED] = 0;
   // controls[SINE_WAVE_HEIGHT] = 0;
   // controls[SINE_WAVE_LENGTH] = 0;
 }
@@ -65,10 +78,18 @@ void draw() {
   float stripeThickness = controls[STRIPE_THICKNESS];
   float thickWaveAmount = controls[THICK_WAVE_AMOUNT] * maxThickWaveAmount;
   float thickWaveSpeed = controls[THICK_WAVE_SPEED] * maxThickWaveSpeed;
+  float ghostSpinSpeed = mapPosNeg(GHOST_SPIN_SPEED, maxGhostSpinSpeed);
+  float ghostSizeSpeed = controls[GHOST_SIZE_SPEED] * maxGhostSizeSpeed;
   // float sineWaveHeight = controls[SINE_WAVE_HEIGHT] * maxSineWaveHeight;
   // float sineWaveLength = controls[SINE_WAVE_LENGTH] * maxSineWaveLength;
 
   push();
+    currentGhostAngle += ghostSpinSpeed * TAU;
+    rotate(currentGhostAngle);
+
+    currentSizePhase = (currentSizePhase + ghostSizeSpeed / rate) % 1;
+    scale(map(sin(currentSizePhase * TAU), -1, 1, minGhostSize, maxGhostSize));
+
     noStroke();
     fill(ghostColor);
     shape(svg, 0, 0);
@@ -90,9 +111,10 @@ void draw() {
     float tSin = sin(currentThickPhase * TAU);
     float thickMod = tSin * thickWaveAmount * (tSin > 0 ? 1 - stripeThickness : stripeThickness);
     float stripeWidth = (stripeThickness + thickMod) * stripeSpacing;
-    translate(-stripeWidth / 2, 0); // center stripe
 
-    translate(-stripeLength / 2, -stripeLength / 2);
+    float startPos = ceil(stripeLength / stripeSpacing) / 2 * stripeSpacing;
+    translate(-startPos, -startPos);
+
     for (float x = 0; x <= stripeLength; x += stripeSpacing) {
       rect(x, 0, stripeWidth, stripeLength);
     }
