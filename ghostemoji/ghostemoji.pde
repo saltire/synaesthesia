@@ -7,7 +7,7 @@ color bkgdColor = color(0, 16, 16);
 color ghostColor = color(224, 224, 255);
 color stripeColor = color(255);
 
-float stripeLength;
+float canvasSize;
 
 float currentStripeAngle = TAU / 8;
 float maxStripeSpinSpeed = .01 * TAU; // revolutions per frame
@@ -15,7 +15,7 @@ float maxStripeSpinSpeed = .01 * TAU; // revolutions per frame
 float currentAnimPhase = 0;
 float maxStripeAnimSpeed = 20; // stripeSpacings per second
 
-float minStripeSpacing = 10;
+float minStripeSpacing = 15;
 float maxStripeSpacing = 1000;
 
 float maxThickWaveSpeed = 5; // undulations per second
@@ -51,7 +51,7 @@ void setup() {
 
   frameRate(rate);
 
-  stripeLength = sqrt(width * width + height * height) * 1.9;
+  canvasSize = sqrt(width * width + height * height) * 1.9;
 
   shapeMode(CENTER);
   svg = loadShape("ghostemoji.svg");
@@ -70,8 +70,6 @@ void setup() {
 }
 
 void draw() {
-  background(bkgdColor);
-
   float stripeSpinSpeed = mapPosNeg(STRIPE_SPIN_SPEED, maxStripeSpinSpeed);
   float stripeAnimSpeed = mapPosNeg(STRIPE_ANIM_SPEED, maxStripeAnimSpeed);
   float stripeSpacing = mapControl(STRIPE_SPACING, minStripeSpacing, maxStripeSpacing);
@@ -83,24 +81,10 @@ void draw() {
   // float sineWaveHeight = controls[SINE_WAVE_HEIGHT] * maxSineWaveHeight;
   // float sineWaveLength = controls[SINE_WAVE_LENGTH] * maxSineWaveLength;
 
-  push();
-    currentGhostAngle += ghostSpinSpeed * TAU;
-    rotate(currentGhostAngle);
-
-    currentSizePhase = (currentSizePhase + ghostSizeSpeed / rate) % 1;
-    scale(map(sin(currentSizePhase * TAU), -1, 1, minGhostSize, maxGhostSize));
-
-    noStroke();
-    fill(ghostColor);
-    shape(svg, 0, 0);
-  pop();
+  background(bkgdColor);
+  translate(width / 2, height / 2);
 
   push();
-    blendMode(DIFFERENCE);
-    fill(stripeColor);
-
-    translate(width / 2, height / 2);
-
     currentStripeAngle += stripeSpinSpeed * TAU;
     rotate(currentStripeAngle);
 
@@ -112,12 +96,26 @@ void draw() {
     float thickMod = tSin * thickWaveAmount * (tSin > 0 ? 1 - stripeThickness : stripeThickness);
     float stripeWidth = (stripeThickness + thickMod) * stripeSpacing;
 
-    float startPos = ceil(stripeLength / stripeSpacing) / 2 * stripeSpacing;
+    float startPos = ceil(canvasSize / stripeSpacing) / 2 * stripeSpacing;
     translate(-startPos, -startPos);
 
-    for (float x = 0; x <= stripeLength; x += stripeSpacing) {
-      rect(x, 0, stripeWidth, stripeLength);
+    fill(stripeColor);
+    for (float x = 0; x <= canvasSize; x += stripeSpacing) {
+      rect(x, 0, stripeWidth, canvasSize);
     }
+  pop();
+
+  push();
+    currentGhostAngle += ghostSpinSpeed * TAU;
+    rotate(currentGhostAngle);
+
+    currentSizePhase = (currentSizePhase + ghostSizeSpeed / rate) % 1;
+    scale(map(sin(currentSizePhase * TAU), -1, 1, minGhostSize, maxGhostSize));
+
+    blendMode(DIFFERENCE);
+    noStroke();
+    fill(ghostColor);
+    shape(svg, 0, 0);
   pop();
 }
 
