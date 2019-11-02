@@ -30,8 +30,11 @@ float minGhostSize = .1;
 float maxGhostSize = 1.9;
 float currentSizePhase = 0;
 
-float maxGhostHueSpeed = 2;
-float currentHuePhase = 0;
+float maxGhostHueSpeed = 5;
+float currentGhostHuePhase = 0;
+
+float maxStripeHueSpeed = 5;
+float currentStripeHuePhase = 0;
 
 // all relative to stripeSpacing
 float maxSineWaveHeight = 1;
@@ -50,6 +53,8 @@ int GHOST_SIZE_SPEED = 28;
 // alt mode
 int GHOST_HUE_SPEED = 21;
 int GHOST_SAT = 22;
+int STRIPE_HUE_SPEED = 23;
+int STRIPE_SAT = 24;
 int SINE_WAVE_HEIGHT = 27;
 int SINE_WAVE_LENGTH = 28;
 
@@ -59,6 +64,12 @@ int ALT_MODE_1_OFF = 40;
 boolean altMode2 = false;
 int ALT_MODE_2_ON = 37;
 int ALT_MODE_2_OFF = 41;
+boolean altMode3 = false;
+int ALT_MODE_3_ON = 38;
+int ALT_MODE_3_OFF = 42;
+boolean altMode4 = false;
+int ALT_MODE_4_ON = 39;
+int ALT_MODE_4_OFF = 43;
 boolean altMode7 = false;
 int ALT_MODE_7_ON = 46;
 int ALT_MODE_7_OFF = 50;
@@ -75,6 +86,8 @@ void setup() {
   frameRate(rate);
 
   canvasSize = sqrt(width * width + height * height) * 1.9;
+
+  colorMode(HSB, 360, 100, 100);
 
   shapeMode(CENTER);
   strokeJoin(ROUND);
@@ -103,6 +116,8 @@ float ghostSizeSpeed;
 // alt mode
 float ghostHueSpeed;
 float ghostSat;
+float stripeHueSpeed;
+float stripeSat;
 float sineWaveHeight;
 float sineWaveLength;
 
@@ -112,6 +127,10 @@ void draw() {
   if (notes[ALT_MODE_1_OFF] > 0) altMode1 = false;
   if (notes[ALT_MODE_2_ON] > 0) altMode2 = true;
   if (notes[ALT_MODE_2_OFF] > 0) altMode2 = false;
+  if (notes[ALT_MODE_3_ON] > 0) altMode3 = true;
+  if (notes[ALT_MODE_3_OFF] > 0) altMode3 = false;
+  if (notes[ALT_MODE_4_ON] > 0) altMode4 = true;
+  if (notes[ALT_MODE_4_OFF] > 0) altMode4 = false;
   if (notes[ALT_MODE_7_ON] > 0) altMode7 = true;
   if (notes[ALT_MODE_7_OFF] > 0) altMode7 = false;
   if (notes[ALT_MODE_8_ON] > 0) altMode8 = true;
@@ -119,8 +138,8 @@ void draw() {
 
   if (!altMode1) stripeSpinSpeed = mapPosNeg(STRIPE_SPIN_SPEED, maxStripeSpinSpeed);
   if (!altMode2) stripeAnimSpeed = mapPosNeg(STRIPE_ANIM_SPEED, maxStripeAnimSpeed);
-  stripeSpacing = mapControl(STRIPE_SPACING, minStripeSpacing, maxStripeSpacing);
-  stripeThickness = controls[STRIPE_THICKNESS];
+  if (!altMode3) stripeSpacing = mapControl(STRIPE_SPACING, minStripeSpacing, maxStripeSpacing);
+  if (!altMode4) stripeThickness = controls[STRIPE_THICKNESS];
   minWidth = mapControl(THICK_WAVE_AMOUNT, stripeThickness, 0);
   maxWidth = mapControl(THICK_WAVE_AMOUNT, stripeThickness, 1);
   thickWaveSpeed = controls[THICK_WAVE_SPEED] * maxThickWaveSpeed;
@@ -129,6 +148,8 @@ void draw() {
   // alt mode
   if (altMode1) ghostHueSpeed = controls[GHOST_HUE_SPEED] * maxGhostHueSpeed;
   if (altMode2) ghostSat = controls[GHOST_SAT];
+  if (altMode3) stripeHueSpeed = controls[STRIPE_HUE_SPEED] * maxStripeHueSpeed;
+  if (altMode4) stripeSat = controls[STRIPE_SAT];
   if (altMode7) sineWaveHeight = controls[SINE_WAVE_HEIGHT] * maxSineWaveHeight * stripeSpacing;
   if (altMode8) sineWaveLength = mapControl(SINE_WAVE_LENGTH, minSineWaveLength, maxSineWaveLength) * stripeSpacing;
 
@@ -142,6 +163,9 @@ void draw() {
 
     currentAnimPhase = (currentAnimPhase + stripeAnimSpeed / rate) % 1;
     translate(currentAnimPhase * stripeSpacing, 0);
+
+    currentStripeHuePhase = (currentStripeHuePhase + stripeHueSpeed / rate) % 1;
+    color stripeColor = color(currentStripeHuePhase * 360, stripeSat * 100, 100);
 
     currentThickPhase = (currentThickPhase + thickWaveSpeed / rate) % 1;
     float tSin = sin(currentThickPhase * TAU);
@@ -171,9 +195,8 @@ void draw() {
     currentGhostAngle += ghostSpinSpeed * TAU;
     rotate(currentGhostAngle);
 
-    currentHuePhase = (currentHuePhase + ghostHueSpeed / rate) % 1;
-    colorMode(HSB, 360, 100, 100);
-    color ghostColor = color(currentHuePhase * 360, ghostSat * 100, 100);
+    currentGhostHuePhase = (currentGhostHuePhase + ghostHueSpeed / rate) % 1;
+    color ghostColor = color(currentGhostHuePhase * 360, ghostSat * 100, 100);
 
     currentSizePhase = (currentSizePhase + ghostSizeSpeed / rate) % 1;
     scale(map(sin(currentSizePhase * TAU), -1, 1, minGhostSize, maxGhostSize));
