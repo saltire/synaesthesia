@@ -30,6 +30,9 @@ float minGhostSize = .1;
 float maxGhostSize = 1.9;
 float currentSizePhase = 0;
 
+float maxGhostHueSpeed = 2;
+float currentHuePhase = 0;
+
 // all relative to stripeSpacing
 float maxSineWaveHeight = 1;
 float minSineWaveLength = .5;
@@ -45,9 +48,17 @@ int THICK_WAVE_SPEED = 26;
 int GHOST_SPIN_SPEED = 27;
 int GHOST_SIZE_SPEED = 28;
 // alt mode
+int GHOST_HUE_SPEED = 21;
+int GHOST_SAT = 22;
 int SINE_WAVE_HEIGHT = 27;
 int SINE_WAVE_LENGTH = 28;
 
+boolean altMode1 = false;
+int ALT_MODE_1_ON = 36;
+int ALT_MODE_1_OFF = 40;
+boolean altMode2 = false;
+int ALT_MODE_2_ON = 37;
+int ALT_MODE_2_OFF = 41;
 boolean altMode7 = false;
 int ALT_MODE_7_ON = 46;
 int ALT_MODE_7_OFF = 50;
@@ -78,8 +89,6 @@ void setup() {
   controls[THICK_WAVE_SPEED] = .5;
   controls[GHOST_SPIN_SPEED] = .5;
   controls[GHOST_SIZE_SPEED] = 0;
-  // controls[SINE_WAVE_HEIGHT] = 0;
-  // controls[SINE_WAVE_LENGTH] = .5;
 }
 
 float stripeSpinSpeed;
@@ -91,17 +100,25 @@ float maxWidth;
 float thickWaveSpeed;
 float ghostSpinSpeed;
 float ghostSizeSpeed;
+// alt mode
+float ghostHueSpeed;
+float ghostSat;
 float sineWaveHeight;
 float sineWaveLength;
 
 void draw() {
+
+  if (notes[ALT_MODE_1_ON] > 0) altMode1 = true;
+  if (notes[ALT_MODE_1_OFF] > 0) altMode1 = false;
+  if (notes[ALT_MODE_2_ON] > 0) altMode2 = true;
+  if (notes[ALT_MODE_2_OFF] > 0) altMode2 = false;
   if (notes[ALT_MODE_7_ON] > 0) altMode7 = true;
   if (notes[ALT_MODE_7_OFF] > 0) altMode7 = false;
   if (notes[ALT_MODE_8_ON] > 0) altMode8 = true;
   if (notes[ALT_MODE_8_OFF] > 0) altMode8 = false;
 
-  stripeSpinSpeed = mapPosNeg(STRIPE_SPIN_SPEED, maxStripeSpinSpeed);
-  stripeAnimSpeed = mapPosNeg(STRIPE_ANIM_SPEED, maxStripeAnimSpeed);
+  if (!altMode1) stripeSpinSpeed = mapPosNeg(STRIPE_SPIN_SPEED, maxStripeSpinSpeed);
+  if (!altMode2) stripeAnimSpeed = mapPosNeg(STRIPE_ANIM_SPEED, maxStripeAnimSpeed);
   stripeSpacing = mapControl(STRIPE_SPACING, minStripeSpacing, maxStripeSpacing);
   stripeThickness = controls[STRIPE_THICKNESS];
   minWidth = mapControl(THICK_WAVE_AMOUNT, stripeThickness, 0);
@@ -109,6 +126,9 @@ void draw() {
   thickWaveSpeed = controls[THICK_WAVE_SPEED] * maxThickWaveSpeed;
   if (!altMode7) ghostSpinSpeed = mapPosNeg(GHOST_SPIN_SPEED, maxGhostSpinSpeed);
   if (!altMode8) ghostSizeSpeed = controls[GHOST_SIZE_SPEED] * maxGhostSizeSpeed;
+  // alt mode
+  if (altMode1) ghostHueSpeed = controls[GHOST_HUE_SPEED] * maxGhostHueSpeed;
+  if (altMode2) ghostSat = controls[GHOST_SAT];
   if (altMode7) sineWaveHeight = controls[SINE_WAVE_HEIGHT] * maxSineWaveHeight * stripeSpacing;
   if (altMode8) sineWaveLength = mapControl(SINE_WAVE_LENGTH, minSineWaveLength, maxSineWaveLength) * stripeSpacing;
 
@@ -150,6 +170,10 @@ void draw() {
   push();
     currentGhostAngle += ghostSpinSpeed * TAU;
     rotate(currentGhostAngle);
+
+    currentHuePhase = (currentHuePhase + ghostHueSpeed / rate) % 1;
+    colorMode(HSB, 360, 100, 100);
+    color ghostColor = color(currentHuePhase * 360, ghostSat * 100, 100);
 
     currentSizePhase = (currentSizePhase + ghostSizeSpeed / rate) % 1;
     scale(map(sin(currentSizePhase * TAU), -1, 1, minGhostSize, maxGhostSize));
