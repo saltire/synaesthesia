@@ -22,7 +22,8 @@ s.listen(1)
 
 dirname = os.path.dirname(os.path.abspath(__file__))
 sketch = sys.argv[1] if len(sys.argv) > 1 else 'sketch'
-mode = '--present' if rpi else '--run'
+# mode = '--present' if rpi else '--run'
+mode = '--present'
 
 with subprocess.Popen(['processing-java', f'--sketch={dirname}/{sketch}', mode],
                       stdin=subprocess.PIPE, encoding='utf8') as proc:

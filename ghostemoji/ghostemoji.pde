@@ -79,7 +79,7 @@ int ALT_MODE_8_OFF = 51;
 
 void setup() {
   // size(800, 480);
-  size(1024, 768);
+  size(1920, 1080);
 
   setupMidiServer();
 
