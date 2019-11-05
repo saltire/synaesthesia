@@ -17,17 +17,17 @@ void clientEvent(Client client) {
 
     String[] list = str.split(",");
     for (int i = 0; i < list.length; i += 3) {
-      if (list[i].equals("control")) {
+      if (list[i].equals("controller")) {
         int control = int(list[i + 1]);
         float value = float(list[i + 2]);
         controls[control] = value;
-        println("control", control, ":", value);
+        println("controller", control, ":", value);
       }
-      else if (list[i].equals("note")) {
+      else if (list[i].equals("noteon") || list[i].equals("noteoff")) {
         int note = int(list[i + 1]);
         float value = float(list[i + 2]);
         notes[note] = value;
-        println("note", note, ":", value);
+        println(list[i], note, ":", value);
       }
     }
   }

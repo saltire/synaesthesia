@@ -22,8 +22,8 @@ s.listen(1)
 
 dirname = os.path.dirname(os.path.abspath(__file__))
 sketch = sys.argv[1] if len(sys.argv) > 1 else 'sketch'
-# mode = '--present' if rpi else '--run'
-mode = '--present'
+mode = '--present' if rpi else '--run'
+# mode = '--present'
 
 with subprocess.Popen(['processing-java', f'--sketch={dirname}/{sketch}', mode],
                       stdin=subprocess.PIPE, encoding='utf8') as proc:
@@ -34,21 +34,11 @@ with subprocess.Popen(['processing-java', f'--sketch={dirname}/{sketch}', mode],
             # print('sending', string)
             conn.send(f'{string}\n'.encode('utf8'))
 
-        def noteon(note, velocity):
-            # print('noteon', note, velocity)
-            send(f'note,{note},{velocity / 127.0}')
+        def on_event(event, id, value):
+            # print(event, note, velocity)
+            send(f'{event},{id},{value / 127.0}')
 
-        def noteoff(note, velocity):
-            # print('noteoff', note, velocity)
-            send(f'note,{note},{velocity / 127.0}')
-
-        def controller(control, level):
-            # print('controller', control, level)
-            send(f'control,{control},{level / 127.0}')
-
-        midi.bind('noteon', noteon)
-        midi.bind('noteoff', noteoff)
-        midi.bind('controller', controller)
+        midi.bind('event', on_event)
 
         midi.start()
 
