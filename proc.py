@@ -4,13 +4,7 @@ import socket
 import sys
 import subprocess
 
-# Check if we're on a linux system (i.e. the Pi). TODO: find a more specific way to identify it.
-rpi = sys.platform.startswith('linux')
-
-if rpi and False:
-    from midialsa import MidiAlsa as Midi
-else:
-    from midipygame import MidiPygame as Midi
+from launchkey import Launchkey
 
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -19,7 +13,7 @@ s.listen(1)
 
 dirname = os.path.dirname(os.path.abspath(__file__))
 sketch = sys.argv[1] if len(sys.argv) > 1 else 'sketch'
-mode = '--present' if rpi else '--run'
+mode = '--run'
 # mode = '--present'
 
 with subprocess.Popen(['processing-java', f'--sketch={dirname}/{sketch}', mode],
@@ -34,9 +28,12 @@ with subprocess.Popen(['processing-java', f'--sketch={dirname}/{sketch}', mode],
         # print(event, note, velocity)
         send(f'{event},{channel},{id},{value / 127.0}')
 
-    midi = Midi(debug=True)
-    midi.bind('event', on_event)
-    midi.start()
+    lk = Launchkey()
+    lk.bind('event', on_event)
+    lk.start()
+
+    lk.send_noteon(96, 127)
+    lk.send_noteon(104, 127)
 
 # Continue when subprocess is ended
-midi.end()
+lk.end()
