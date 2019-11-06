@@ -3,7 +3,6 @@ import os
 import socket
 import sys
 import subprocess
-import threading
 
 # Check if we're on a linux system (i.e. the Pi). TODO: find a more specific way to identify it.
 rpi = sys.platform.startswith('linux')
@@ -13,8 +12,6 @@ if rpi and False:
 else:
     from midipygame import MidiPygame as Midi
 
-
-midi = Midi()
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind(('', 8027))
@@ -29,20 +26,17 @@ with subprocess.Popen(['processing-java', f'--sketch={dirname}/{sketch}', mode],
                       stdin=subprocess.PIPE, encoding='utf8') as proc:
     conn, addr = s.accept()
 
-    def do_midi():
-        def send(string):
-            # print('sending', string)
-            conn.send(f'{string}\n'.encode('utf8'))
+    def send(string):
+        # print('sending', string)
+        conn.send(f'{string}\n'.encode('utf8'))
 
-        def on_event(event, channel, id, value):
-            # print(event, note, velocity)
-            send(f'{event},{channel},{id},{value / 127.0}')
+    def on_event(event, channel, id, value):
+        # print(event, note, velocity)
+        send(f'{event},{channel},{id},{value / 127.0}')
 
-        midi.bind('event', on_event)
+    midi = Midi(debug=True)
+    midi.bind('event', on_event)
+    midi.start()
 
-        midi.start()
-
-    mt = threading.Thread(target=do_midi)
-    mt.start()
-
+# Continue when subprocess is ended
 midi.end()

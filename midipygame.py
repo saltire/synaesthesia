@@ -1,3 +1,5 @@
+import threading
+
 import pygame.midi as midi
 
 
@@ -45,23 +47,27 @@ class MidiPygame:
         self.binds[event] = func
 
     def start(self):
-        while self.running:
-            if self.midi_input.poll():
-                [[[status, *params], timestamp]] = self.midi_input.read(1)
-                etype = status >> 4
-                channel = status & 0xf
-                event = self.events[etype] if etype in self.events else etype
+        def do_loop():
+            while self.running:
+                if self.midi_input.poll():
+                    [[[status, *params], timestamp]] = self.midi_input.read(1)
+                    etype = status >> 4
+                    channel = status & 0xf
+                    event = self.events[etype] if etype in self.events else etype
 
-                if self.debug:
-                    print('{} event, channel {}, params {}, timestamp {}'
-                        .format(event, channel, params, timestamp))
+                    if self.debug:
+                        print('{} event, channel {}, params {}, timestamp {}'
+                            .format(event, channel, params, timestamp))
 
-                if 'event' in self.binds:
-                    self.binds['event'](event, channel, *params[:2])
-                if event in self.binds:
-                    self.binds[event](channel, *params[:2])
+                    if 'event' in self.binds:
+                        self.binds['event'](event, channel, *params[:2])
+                    if event in self.binds:
+                        self.binds[event](channel, *params[:2])
 
-        self.midi_input.close()
+            self.midi_input.close()
+
+        mt = threading.Thread(target=do_loop)
+        mt.start()
 
     def end(self):
         self.running = False
