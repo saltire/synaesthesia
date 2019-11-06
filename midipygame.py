@@ -57,9 +57,9 @@ class MidiPygame:
                         .format(event, channel, params, timestamp))
 
                 if 'event' in self.binds:
-                    self.binds['event'](event, *params[:2])
+                    self.binds['event'](event, channel, *params[:2])
                 if event in self.binds:
-                    self.binds[event](*params[:2])
+                    self.binds[event](channel, *params[:2])
 
         self.midi_input.close()
 

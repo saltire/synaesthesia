@@ -34,9 +34,9 @@ with subprocess.Popen(['processing-java', f'--sketch={dirname}/{sketch}', mode],
             # print('sending', string)
             conn.send(f'{string}\n'.encode('utf8'))
 
-        def on_event(event, id, value):
+        def on_event(event, channel, id, value):
             # print(event, note, velocity)
-            send(f'{event},{id},{value / 127.0}')
+            send(f'{event},{channel},{id},{value / 127.0}')
 
         midi.bind('event', on_event)
 

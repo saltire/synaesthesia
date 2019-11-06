@@ -4,6 +4,7 @@ void setup() {
   size(800, 480);
 
   dotMover = new DotMover(this);
+  dotMover.debug = true;
 }
 
 void draw() {

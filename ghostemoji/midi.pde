@@ -16,16 +16,16 @@ void clientEvent(Client client) {
     // println("Got message:", str);
 
     String[] list = str.split(",");
-    for (int i = 0; i < list.length; i += 3) {
+    for (int i = 0; i < list.length; i += 4) {
       if (list[i].equals("controller")) {
-        int control = int(list[i + 1]);
-        float value = float(list[i + 2]);
+        int control = int(list[i + 2]);
+        float value = float(list[i + 3]);
         controls[control] = value;
         println("controller", control, ":", value);
       }
       else if (list[i].equals("noteon") || list[i].equals("noteoff")) {
-        int note = int(list[i + 1]);
-        float value = float(list[i + 2]);
+        int note = int(list[i + 2]);
+        float value = float(list[i + 3]);
         notes[note] = value;
         println(list[i], note, ":", value);
       }

@@ -9,9 +9,7 @@ class DotMover extends Launchkey {
     }
   }
 
-  void controller(int control, float value) {
-    if (control >= 21 && control <= 28) {
-      dots[control - 21].y = (1 - value) * height;
-    }
+  void dial(int dial, float value) {
+    dots[dial].y = (1 - value) * height;
   }
 }
