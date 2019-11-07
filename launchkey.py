@@ -11,15 +11,22 @@ known_control_devices = [
     'Launchkey Mini InControl 1',
     'Launchkey Mini LK Mini InControl',
 ]
+event_codes = {
+    8: 'noteoff',
+    9: 'noteon',
+    11: 'controller',
+    12: 'pgmchange',
+}
+button_names = {
+    104: 'sceneUp',
+    105: 'sceneDown',
+    106: 'trackLeft',
+    107: 'trackRight',
+    108: 'roundTop',
+    109: 'roundBottom',
+}
 
 class Launchkey:
-    events = {
-        8: 'noteoff',
-        9: 'noteon',
-        11: 'controller',
-        12: 'pgmchange',
-    }
-
     def __init__(self, debug=False):
         print('Using Pygame MIDI interface')
         self.debug = debug
@@ -66,8 +73,8 @@ class Launchkey:
 
         def do_loop():
             while self.running:
-                self.get_events(self.midi_input)
-                self.get_events(self.control_input)
+                self.emit_events(self.midi_input)
+                self.emit_events(self.control_input)
 
             self.midi_input.close()
             self.control_input.close()
@@ -76,22 +83,67 @@ class Launchkey:
         loop = threading.Thread(target=do_loop)
         loop.start()
 
-    def get_events(self, input_device):
-        if input_device.poll():
+    def emit_events(self, source):
+        for event, channel, id, value in self.get_raw_events(source):
+            self.emit_event(event, channel, id, value)
+
+            if event in ['noteon', 'noteoff']:
+                status = event[4:]
+
+                if source == self.midi_input:
+                    if channel == 0:
+                        self.emit_event(f'key{status}', id, value / 127)
+                    elif channel == 9 and id >= 36 and id <= 51:
+                        if id <= 39:
+                            self.emit_event(f'pad{status}', id - 28, value / 127)
+                        elif id <= 43:
+                            self.emit_event(f'pad{status}', id - 40, value / 127)
+                        elif id <= 47:
+                            self.emit_event(f'pad{status}', id - 32, value / 127)
+                        else:
+                            self.emit_event(f'pad{status}', id - 44, value / 127)
+
+                elif source == self.control_input:
+                    if id >= 96 and id <= 103:
+                        self.emit_event(f'pad{status}', id - 96, value / 127)
+                    elif id >= 112 and id <= 119:
+                        self.emit_event(f'pad{status}', id - 104, value / 127)
+                    elif id == 104:
+                        self.emit_event(f'button{status}', 'roundTop')
+                    elif id == 120:
+                        self.emit_event(f'button{status}', 'roundBottom')
+
+            elif event == 'controller':
+                if id >= 21 and id <= 28:
+                    self.emit_event('dial', id - 21, value / 127)
+                elif id in button_names:
+                    status = 'on' if value > 0 else 'off'
+                    self.emit_event(f'button{status}', button_names[id])
+
+    def get_raw_events(self, input_device):
+        events = []
+
+        while input_device.poll():
             [[[status, *params], timestamp]] = input_device.read(1)
             etype = status >> 4
             channel = status & 0xf
-            event = self.events[etype] if etype in self.events else etype
+            event = event_codes[etype] if etype in event_codes else etype
 
             if self.debug:
                 print('{}, {} event, channel {}, params {}, timestamp {}'
                     .format(input_device.name, event, channel, params, timestamp))
 
-            if 'event' in self.binds:
-                self.binds['event'](event, channel, *params[:2])
-            if event in self.binds:
-                self.binds[event](channel, *params[:2])
+            events.append((event, channel, *params[:2]))
 
+        return events
+
+    def emit_event(self, event, *params):
+        if self.debug:
+            print('Emitting:', event, *params)
+        if 'event' in self.binds:
+            self.binds['event'](event, *params)
+        if event in self.binds:
+            self.binds[event](*params)
 
     def set_incontrol(self, enable=True):
         # 144 = noteon, channel 0

@@ -24,11 +24,11 @@ with subprocess.Popen(['processing-java', f'--sketch={dirname}/{sketch}', mode],
         # print('sending', string)
         conn.send(f'{string}\n'.encode('utf8'))
 
-    def on_event(event, channel, id, value):
+    def on_event(event, *params):
         # print(event, note, velocity)
-        send(f'{event},{channel},{id},{value / 127.0}')
+        send(','.join(str(arg) for arg in [event, *params]))
 
-    lk = Launchkey()
+    lk = Launchkey(debug=True)
     lk.bind('event', on_event)
     lk.start()
 
