@@ -37,3 +37,5 @@ with subprocess.Popen(['processing-java', f'--sketch={dirname}/{sketch}', mode],
 
 # Continue when subprocess is ended
 lk.end()
+
+s.close()

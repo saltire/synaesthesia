@@ -64,6 +64,7 @@ class Launchkey:
 
         self.binds = {}
         self.running = True
+        self.done = False
 
     def bind(self, event, func):
         self.binds[event] = func
@@ -76,21 +77,19 @@ class Launchkey:
                 self.emit_events(self.midi_input)
                 self.emit_events(self.control_input)
 
-            self.midi_input.close()
-            self.control_input.close()
-            self.control_output.close()
+            self.done = True
 
         loop = threading.Thread(target=do_loop)
         loop.start()
 
-    def emit_events(self, source):
-        for event, channel, id, value in self.get_raw_events(source):
+    def emit_events(self, input_device):
+        for event, channel, id, value in self.get_raw_events(input_device):
             self.emit_event(event, channel, id, value)
 
             if event in ['noteon', 'noteoff']:
                 status = event[4:]
 
-                if source == self.midi_input:
+                if input_device == self.midi_input:
                     if channel == 0:
                         self.emit_event(f'key{status}', id, value / 127)
                     elif channel == 9 and id >= 36 and id <= 51:
@@ -103,7 +102,7 @@ class Launchkey:
                         else:
                             self.emit_event(f'pad{status}', id - 44, value / 127)
 
-                elif source == self.control_input:
+                elif input_device == self.control_input:
                     if id >= 96 and id <= 103:
                         self.emit_event(f'pad{status}', id - 96, value / 127)
                     elif id >= 112 and id <= 119:
@@ -123,7 +122,7 @@ class Launchkey:
     def get_raw_events(self, input_device):
         events = []
 
-        while input_device.poll():
+        while input_device and input_device.poll():
             [[[status, *params], timestamp]] = input_device.read(1)
             etype = status >> 4
             channel = status & 0xf
@@ -146,12 +145,24 @@ class Launchkey:
             self.binds[event](*params)
 
     def set_incontrol(self, enable=True):
-        # 144 = noteon, channel 0
-        self.control_output.write([[[144, 12, 127 if enable else 0], 0]])
+        if self.control_output:
+            # 144 = noteon, channel 0
+            self.control_output.write([[[144, 12, 127 if enable else 0], 0]])
 
     def send_noteon(self, note, velocity):
-        self.control_output.write([[[144, note, velocity], 0]])
+        if self.control_output:
+            self.control_output.write([[[144, note, velocity], 0]])
 
     def end(self):
         self.set_incontrol(False)
         self.running = False
+
+        while not self.done:
+            pass
+
+        if self.midi_input:
+            self.midi_input.close()
+        if self.control_input:
+            self.control_input.close()
+        if self.control_output:
+            self.control_output.close()
