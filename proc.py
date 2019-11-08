@@ -3,6 +3,7 @@ import os
 import socket
 import sys
 import subprocess
+import threading
 
 from launchkey import Launchkey
 
@@ -32,8 +33,24 @@ with subprocess.Popen(['processing-java', f'--sketch={dirname}/{sketch}', mode],
     lk.bind('event', on_event)
     lk.start()
 
-    lk.send_noteon(96, 127)
-    lk.send_noteon(104, 127)
+    def recv_loop():
+        while True:
+            msglen_byte = conn.recv(1)
+            if len(msglen_byte) == 0:
+                break
+
+            msglen = ord(msglen_byte)
+            msg = ''
+            while len(msg) < msglen:
+                getlen = min(msglen, 16)
+                msg += conn.recv(getlen).decode('utf-8')
+                msglen -= getlen
+
+            command, *params = msg.split(',')
+            lk.receive(command, *params)
+
+    rloop = threading.Thread(target=recv_loop)
+    rloop.start()
 
 # Continue when subprocess is ended
 lk.end()

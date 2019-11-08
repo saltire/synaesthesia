@@ -25,6 +25,10 @@ button_names = {
     108: 'roundTop',
     109: 'roundBottom',
 }
+note_button_names = {
+    104: 'roundTop',
+    120: 'roundBottom',
+}
 
 class Launchkey:
     def __init__(self, debug=False):
@@ -107,10 +111,8 @@ class Launchkey:
                         self.emit_event(f'pad{status}', id - 96, value / 127)
                     elif id >= 112 and id <= 119:
                         self.emit_event(f'pad{status}', id - 104, value / 127)
-                    elif id == 104:
-                        self.emit_event(f'button{status}', 'roundTop')
-                    elif id == 120:
-                        self.emit_event(f'button{status}', 'roundBottom')
+                    elif id in note_button_names:
+                        self.emit_event(f'button{status}', note_button_names[id])
 
             elif event == 'controller':
                 if id >= 21 and id <= 28:
@@ -129,8 +131,7 @@ class Launchkey:
             event = event_codes[etype] if etype in event_codes else etype
 
             if self.debug:
-                print('{}, {} event, channel {}, params {}, timestamp {}'
-                    .format(input_device.name, event, channel, params, timestamp))
+                print(f'{input_device.name}: {event} <{channel}> {params} : {timestamp}')
 
             events.append((event, channel, *params[:2]))
 
@@ -149,9 +150,22 @@ class Launchkey:
             # 144 = noteon, channel 0
             self.control_output.write([[[144, 12, 127 if enable else 0], 0]])
 
-    def send_noteon(self, note, velocity):
-        if self.control_output:
-            self.control_output.write([[[144, note, velocity], 0]])
+    def receive(self, command, *params):
+        if self.debug:
+            print(f'Received command {command} {params}')
+
+        if command == 'padcolor' and self.control_output:
+            pad, red, green = [int(p) for p in params]
+            note = None
+            if pad <= 7:
+                note = pad + 96
+            elif pad <= 15:
+                note = pad + 104
+
+            color = red + (green << 4)
+
+            if note is not None:
+                self.control_output.write([[[144, note, color], 0]])
 
     def end(self):
         self.set_incontrol(False)

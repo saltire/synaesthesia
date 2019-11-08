@@ -148,6 +148,19 @@ class Launchkey {
   void keyoff(int key, float velocity) {
     if (debug) println("keyoff", key, ":", velocity);
   }
+
+  // Commands to send back to Launchkey
+
+  void sendCommand(String command) {
+    if (debug) println("Sending command", command);
+    netClient.write(command.length());
+    netClient.write(command);
+  }
+
+  void padcolor(int pad, float red, float green) {
+    String[] list = { "padcolor", nf(pad), nf(int(red * 7)), nf(int(green * 7)) };
+    sendCommand(join(list, ","));
+  }
 }
 
 Launchkey lk_;

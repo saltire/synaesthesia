@@ -12,7 +12,5 @@ void draw() {
   fill(255);
   noStroke();
 
-  for (PVector dot : dotMover.dots) {
-    circle(dot.x, dot.y, 10);
-  }
+  dotMover.drawDots();
 }
