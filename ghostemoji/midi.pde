@@ -19,13 +19,13 @@ void clientEvent(Client client) {
     for (int i = 0; i < list.length; i += 4) {
       if (list[i].equals("controller")) {
         int control = int(list[i + 2]);
-        float value = float(list[i + 3]);
+        float value = float(list[i + 3]) / 127;
         controls[control] = value;
         println("controller", control, ":", value);
       }
       else if (list[i].equals("noteon") || list[i].equals("noteoff")) {
         int note = int(list[i + 2]);
-        float value = float(list[i + 3]);
+        float value = float(list[i + 3]) / 127;
         notes[note] = value;
         println(list[i], note, ":", value);
       }

@@ -58,6 +58,7 @@ int STRIPE_SAT = 24;
 int SINE_WAVE_HEIGHT = 27;
 int SINE_WAVE_LENGTH = 28;
 
+// Note: make sure inControl is turned off so pads will send these notes.
 boolean altMode1 = false;
 int ALT_MODE_1_ON = 36;
 int ALT_MODE_1_OFF = 40;
@@ -78,8 +79,8 @@ int ALT_MODE_8_ON = 47;
 int ALT_MODE_8_OFF = 51;
 
 void setup() {
-  // size(800, 480);
-  size(1920, 1080);
+  size(800, 480);
+  // size(1920, 1080);
 
   setupMidiServer();
 
@@ -122,7 +123,6 @@ float sineWaveHeight;
 float sineWaveLength;
 
 void draw() {
-
   if (notes[ALT_MODE_1_ON] > 0) altMode1 = true;
   if (notes[ALT_MODE_1_OFF] > 0) altMode1 = false;
   if (notes[ALT_MODE_2_ON] > 0) altMode2 = true;
