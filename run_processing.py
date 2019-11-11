@@ -5,7 +5,7 @@ import sys
 import subprocess
 import threading
 
-from launchkey import Launchkey
+from midi_launchkey import Launchkey
 
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
