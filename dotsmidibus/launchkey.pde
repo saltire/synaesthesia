@@ -12,9 +12,18 @@ class Launchkey {
   // float[] pads = new float[16];
   // boolean[] buttons = new boolean[6];
 
-  String[] buttonNames = {
-    "sceneUp", "sceneDown", "trackLeft", "trackRight", "roundTop", "roundBottom",
-  };
+  HashMap<Integer, String> buttonNames = new HashMap<Integer, String>() {{
+    put(104, "sceneUp");
+    put(105, "sceneDown");
+    put(106, "trackLeft");
+    put(107, "trackRight");
+    put(108, "roundTop");
+    put(109, "roundBottom");
+  }};
+  HashMap<Integer, String> noteButtonNames = new HashMap<Integer, String>() {{
+    put(104, "roundTop");
+    put(120, "roundBottom");
+  }};
 
   boolean debug = false;
 
@@ -33,16 +42,20 @@ class Launchkey {
   void controllerChange(int channel, int id, int value, long timestamp, String busName) {
     float fvalue = value / 127.0;
     controller(channel, id, fvalue);
+
     if (id >= 21 && id <= 28) {
       int dialId = id - 21;
       dial(dialId, fvalue);
     }
-    // also named buttons
+    else if (buttonNames.containsKey(id)) {
+      String buttonName = buttonNames.get(id);
+      if (fvalue == 1) buttonon(buttonName);
+      else buttonoff(buttonName);
+    }
   }
 
   void noteOn(int channel, int id, int velocity, long timestamp, String busName) {
     float fvelocity = velocity / 127.0;
-    notes[id] = fvelocity;
     noteon(channel, id, fvelocity);
 
     if (busName == "midi") {
@@ -57,12 +70,9 @@ class Launchkey {
       }
     }
     else if (busName == "control") {
-      if (id >= 96 && id <= 103) {
-        padon(id - 96, fvelocity);
-      }
-      else if (id >= 112 && id <= 119) {
-        padon(id - 104, fvelocity);
-      }
+      if (id >= 96 && id <= 103) padon(id - 96, fvelocity);
+      else if (id >= 112 && id <= 119) padon(id - 104, fvelocity);
+      else if (noteButtonNames.containsKey(id)) buttonon(noteButtonNames.get(id));
     }
   }
 
@@ -82,12 +92,9 @@ class Launchkey {
       }
     }
     else if (busName == "control") {
-      if (id >= 96 && id <= 103) {
-        padoff(id - 96, fvelocity);
-      }
-      else if (id >= 112 && id <= 119) {
-        padoff(id - 104, fvelocity);
-      }
+      if (id >= 96 && id <= 103) padoff(id - 96, fvelocity);
+      else if (id >= 112 && id <= 119) padoff(id - 104, fvelocity);
+      else if (noteButtonNames.containsKey(id)) buttonoff(noteButtonNames.get(id));
     }
   }
 
