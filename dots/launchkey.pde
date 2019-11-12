@@ -1,5 +1,6 @@
 import processing.net.*;
 
+Launchkey lk_;
 
 class Launchkey {
   Client netClient;
@@ -162,8 +163,6 @@ class Launchkey {
     sendCommand(join(list, ","));
   }
 }
-
-Launchkey lk_;
 
 void clientEvent(Client client) {
   while (client.available() > 0) {
