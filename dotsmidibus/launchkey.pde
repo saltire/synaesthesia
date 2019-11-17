@@ -3,6 +3,23 @@ import themidibus.*;
 
 Launchkey lk_;
 
+String[] knownMidiInputs = new String[] {
+  "LK Mini MIDI",
+  "Launchkey Mini",
+};
+String[] knownMidiOutputs = new String[] {
+  "LK Mini MIDI",
+  "Launchkey Mini",
+};
+String[] knownControlInputs = new String[] {
+  "LK Mini InControl",
+  "MIDIIN2 (Launchkey Mini)",
+};
+String[] knownControlOutputs = new String[] {
+  "LK Mini InControl",
+  "MIDIOUT2 (Launchkey Mini)",
+};
+
 class Launchkey {
   boolean debug = true;
 
@@ -30,8 +47,56 @@ class Launchkey {
   Launchkey(PApplet parent) {
     lk_ = this;
 
-    midi = new MidiBus(parent, "LK Mini MIDI", "LK Mini MIDI", "midi");
-    control = new MidiBus(parent, "LK Mini InControl", "LK Mini InControl", "control");
+    MidiBus bus = new MidiBus();
+    String[] inputs = bus.availableInputs();
+    String[] outputs = bus.availableOutputs();
+    String midiInput = null;
+    String midiOutput = null;
+    String controlInput = null;
+    String controlOutput = null;
+    for (int d = 0; d < inputs.length; d++) {
+      if (midiInput == null) {
+        for (int i = 0; i < knownMidiInputs.length; i++) {
+          if (inputs[d].equals(knownMidiInputs[i])) {
+            println("Using midi input device", inputs[d]);
+            midiInput = inputs[d];
+            break;
+          }
+        }
+      }
+      if (controlInput == null) {
+        for (int i = 0; i < knownControlInputs.length; i++) {
+          if (inputs[d].equals(knownControlInputs[i])) {
+            println("Using control input device", inputs[d]);
+            controlInput = inputs[d];
+            break;
+          }
+        }
+      }
+    }
+    for (int d = 0; d < outputs.length; d++) {
+      if (midiOutput == null) {
+        for (int i = 0; i < knownMidiOutputs.length; i++) {
+          if (outputs[d].equals(knownMidiOutputs[i])) {
+            println("Using midi output device", outputs[d]);
+            midiOutput = outputs[d];
+            break;
+          }
+        }
+      }
+      if (controlOutput == null) {
+        for (int i = 0; i < knownControlOutputs.length; i++) {
+          if (outputs[d].equals(knownControlOutputs[i])) {
+            println("Using control output device", outputs[d]);
+            controlOutput = outputs[d];
+            break;
+          }
+        }
+      }
+    }
+
+    midi = new MidiBus(parent, midiInput, midiOutput, "midi");
+    control = new MidiBus(parent, controlInput, controlOutput, "control");
 
     incontrol(true);
   }

@@ -24,16 +24,16 @@ class DotMover extends Launchkey {
     dots[dial].y = (1 - value) * height;
   }
 
-  // void padon(int pad, float value) {
-  //   if (pad < 8) {
-  //     dotColors[pad] = color(255);
-  //   this.padcolor(pad, .75, 1);
-  //   this.padcolor(pad + 8, 0, 0);
-  //   }
-  //   else {
-  //     dotColors[pad - 8] = color(255, 0, 0);
-  //   this.padcolor(pad, 1, 0);
-  //   this.padcolor(pad - 8, 0, 0);
-  //   }
-  // }
+  void padon(int pad, float value) {
+    if (pad < 8) {
+      dotColors[pad] = color(255);
+    this.padcolor(pad, .75, 1);
+    this.padcolor(pad + 8, 0, 0);
+    }
+    else {
+      dotColors[pad - 8] = color(255, 0, 0);
+    this.padcolor(pad, 1, 0);
+    this.padcolor(pad - 8, 0, 0);
+    }
+  }
 }
