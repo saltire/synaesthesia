@@ -4,6 +4,8 @@ import themidibus.*;
 Launchkey lk_;
 
 class Launchkey {
+  boolean debug = true;
+
   MidiBus midi;
   MidiBus control;
 
@@ -25,19 +27,16 @@ class Launchkey {
     put(120, "roundBottom");
   }};
 
-  boolean debug = false;
-
   Launchkey(PApplet parent) {
     lk_ = this;
 
     midi = new MidiBus(parent, "LK Mini MIDI", "LK Mini MIDI", "midi");
     control = new MidiBus(parent, "LK Mini InControl", "LK Mini InControl", "control");
 
-    // enable InControl
-    control.sendNoteOn(0, 12, 127);
+    incontrol(true);
   }
 
-  // internal event handlers
+  // Internal event handlers
 
   void controllerChange(int channel, int id, int value, long timestamp, String busName) {
     float fvalue = value / 127.0;
@@ -141,7 +140,27 @@ class Launchkey {
   void keyoff(int key, float velocity) {
     if (debug) println("keyoff", key, ":", velocity);
   }
+
+  // Commands to send back to Launchkey
+
+  void incontrol(boolean enable) {
+    if (debug) println(enable ? "Enabling" : "Disabling", "InControl");
+    control.sendNoteOn(0, 12, enable ? 127 : 0);
+  }
+
+  void padcolor(int pad, float red, float green) {
+    int note;
+    if (pad <= 7) note = pad + 96;
+    else if (pad <= 15) note = pad + 104;
+    else return;
+
+    if (debug) println("Setting pad", pad, "red", red, "green", green);
+    int col = int(red * 7) + (int(green * 7) << 4);
+    control.sendNoteOn(0, note, col);
+  }
 }
+
+// Midibus event handlers
 
 void controllerChange(int channel, int number, int value, long timestamp, String busName) {
   if (lk_ != null) {
